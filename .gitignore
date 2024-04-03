@@ -1,0 +1,27 @@
+# Virtual environment
+venv/
+*.pyc
+__pycache__/
+
+# Local development settings
+*.sqlite3
+*.pyc
+
+# Media files
+media/
+
+# Static files
+staticfiles/
+
+# Secret key
+*.secret_key
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+*.idea/
+
+# Dependency directories
+node_modules/
