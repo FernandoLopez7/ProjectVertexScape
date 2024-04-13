@@ -26,8 +26,6 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
-
-
 class PerfilAdmin(admin.ModelAdmin):
     list_display = ['__str__', 'telefono_hogar', 'celular']
     # Otros campos que desees mostrar en la lista de perfiles
