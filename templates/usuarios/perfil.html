@@ -1,0 +1,19 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ver Perfil</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+    <h1>Perfil de {{ usuario.username }}</h1>
+    <p>Nombre: {{ usuario.first_name }} {{ usuario.last_name }}</p>
+    <p>Correo electrónico: {{ usuario.email }}</p>
+    <p>Cedula: {{ usuario.cedula }}</p>
+    <p>Celular: {{ usuario.celular }}</p>
+    <p>Telefono: {{ usuario.telefono_hogar }}</p>
+</body>
+</html>

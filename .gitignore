@@ -25,3 +25,5 @@ staticfiles/
 
 # Dependency directories
 node_modules/
+
+config/vertexscape-firebase-adminsdk-5niic-13b7c7c631.json
