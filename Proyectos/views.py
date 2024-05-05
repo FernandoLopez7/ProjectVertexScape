@@ -1,8 +1,9 @@
 from django.shortcuts import render
 
-# Create your views here.
-from .models import Categoria
+from .models import Proyecto
+from django.contrib.auth.decorators import login_required
 
-def ver_imagen(request):
-    categorias = Categoria.objects.all()
-    return render(request, 'proyecto/ver_imagen.html', {'categorias': categorias})
+@login_required
+def listar_proyectos(request):
+    proyectos = Proyecto.objects.filter(diseñador=request.user)
+    return render(request, 'proyecto/listar_proyectos.html', {'proyectos': proyectos})

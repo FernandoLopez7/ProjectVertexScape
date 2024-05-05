@@ -2,6 +2,6 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('imagen/', views.ver_imagen, name='imagen'),
+    path('', views.listar_proyectos, name='index'),
     # Agrega más URLs según sea necesario
 ]

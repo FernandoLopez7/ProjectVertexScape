@@ -14,7 +14,7 @@ def iniciar_sesion(request):
         form = EmailAuthenticationForm(data=request.POST)
         if form.is_valid():
             login(request, form.get_user())
-            return redirect('perfil')  # Reemplaza 'pagina_inicio' con la URL a la que quieres redirigir después del inicio de sesión
+            return redirect('index')  # Reemplaza 'pagina_inicio' con la URL a la que quieres redirigir después del inicio de sesión
     else:
         form = EmailAuthenticationForm()
     return render(request, 'usuarios/login.html', {'form': form})

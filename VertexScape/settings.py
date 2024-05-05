@@ -18,6 +18,8 @@ environ.Env.read_env(env_file='config/.env')
 
 
 from pathlib import Path
+# Para el inicio de sesion personalizado
+from django.urls import reverse_lazy
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -145,3 +147,7 @@ AUTH_USER_MODEL = "Usuarios.User"
 
 # # Para la conexcion segura de firebase
 FIREBASE_JSON_PATH = os.path.join(BASE_DIR, 'config', 'vertexscape-firebase-adminsdk-5niic-13b7c7c631.json')
+
+# # Login
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = reverse_lazy('index')
