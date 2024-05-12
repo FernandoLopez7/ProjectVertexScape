@@ -1,35 +1,53 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
     <title>Proyectos</title>
 </head>
+
 <body>
-    <h1>Lista de Proyectos</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Diseñador</th>
-                <th>Cliente</th>
-                <th>Nombre</th>
-                <th>Fecha de Creación</th>
-                <th>Fecha de Modificación</th>
-                <th>Notas Personales</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for proyecto in proyectos %}
-            <tr>
-                <td>{{ proyecto.diseñador }}</td>
-                <td>{{ proyecto.cliente }}</td>
-                <td>{{ proyecto.nombre }}</td>
-                <td>{{ proyecto.fecha_creacion }}</td>
-                <td>{{ proyecto.fecha_modificacion }}</td>
-                <td>{{ proyecto.notas_personales }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <header class="navar">
+        <nav>
+            <div class="wrapper">
+                <div class="logo"><a href="#">Logo</a></div>
+                <input type="radio" name="slider" id="menu-btn">
+                <input type="radio" name="slider" id="close-btn">
+                <ul class="nav-links">
+                    <label for="close-btn" class="btn close-btn"><i class="fas fa-times">XX</i></label>
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#">About</a></li>
+                    <li><a href="{%url 'perfil' %}">Perfil</a></li>
+                </ul>
+                <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars">XX</i></label>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <div class="container-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Diseñador</th>
+                        <th>Cliente</th>
+                        <th>Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proyecto in proyectos %}
+                    <tr>
+                        <td>{{ proyecto.diseñador }}</td>
+                        <td>{{ proyecto.cliente }}</td>
+                        <td><a href="">{{ proyecto.nombre }}</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
 </body>
+
 </html>

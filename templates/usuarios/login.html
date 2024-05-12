@@ -5,11 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/styleslogin.css' %}">
 </head>
 <body>
-    <h1>Iniciar sesión</h1>
+    <div class="background">
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>  
     <form method="post">
+    <h1>Iniciar sesión</h1>
         {% csrf_token %}
         {{ form.as_p }}
         <button type="submit">Iniciar sesión</button>
