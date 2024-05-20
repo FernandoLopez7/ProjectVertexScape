@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %} {% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'css/stylesnav.css' %}">
+    {% block estilos %} {% endblock %}
+</head>
+
+<body>
+    <header class="navar">
+        <nav>
+            <div class="wrapper">
+                <div class="logo"><a href="#">Logo</a></div>
+                <input type="radio" name="slider" id="menu-btn">
+                <input type="radio" name="slider" id="close-btn">
+                <ul class="nav-links">
+                    <label for="close-btn" class="btn close-btn"><i class="fas fa-times">XX</i></label>
+                    <li><a href="{%url 'index' %}">Home</a></li>
+                    {% if user.is_staff %}
+                    <li><a href="{% url 'admin:index' %}">Admin Panel</a></li>
+                    {% endif %}
+                </ul>
+                <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars">XX</i></label>
+            </div>
+        </nav>
+    </header>
+
+    {% block contenido %} {% endblock %}
+
+</body>
+
+</html>

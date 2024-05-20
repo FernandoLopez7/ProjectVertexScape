@@ -1,37 +1,36 @@
+{% extends "predeterminados/base.html"%}
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
+{% block titulo%} Index {%endblock%}
+{% block estilos %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/stylestable.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/stylesperfil.css' %}">
+{% endblock %}
+{% block contenido%}
+<main class="main-container">
+    <h1>Hola {{ usuario.username }}</h1>
+    <div class="row-a">
+        <div class="column">
+            <p>Nombre: {{ usuario.first_name }} {{ usuario.last_name }}</p>
+            <p>Correo electrónico: {{ usuario.email }}</p>
+            <p>Cedula: {{ usuario.cedula }}</p>
+        </div>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/styles.css' %}">
-    <title>Proyectos</title>
-</head>
-
-<body>
-    <header class="navar">
-        <nav>
-            <div class="wrapper">
-                <div class="logo"><a href="#">Logo</a></div>
-                <input type="radio" name="slider" id="menu-btn">
-                <input type="radio" name="slider" id="close-btn">
-                <ul class="nav-links">
-                    <label for="close-btn" class="btn close-btn"><i class="fas fa-times">XX</i></label>
-                    <li><a href="#">Home</a></li>
-                    <li><a href="#">About</a></li>
-                    <li><a href="{%url 'perfil' %}">Perfil</a></li>
-                </ul>
-                <label for="menu-btn" class="btn menu-btn"><i class="fas fa-bars">XX</i></label>
-            </div>
-        </nav>
-    </header>
-    <main>
+        <div class="column">
+            <p>Celular: {{ usuario.celular }}</p>
+            <p>Telefono: {{ usuario.telefono_hogar }}</p>
+        </div>
+    </div>
+    <div class="buttons-container">
+        <button class="button-arounder" onclick="window.location.href = '{% url 'crear_proyecto' %}'">Nuevo proyecto</button>
+        <button class="button-arounder" onclick="window.location.href = '{% url 'editar_perfil' %}'">Editar</button>
+    </div>
+    <div class="row-b">
         <div class="container-table">
             <table>
                 <thead>
                     <tr>
                         <th>Diseñador</th>
+                        <th>Correo</th>
                         <th>Cliente</th>
                         <th>Nombre</th>
                     </tr>
@@ -41,13 +40,22 @@
                     <tr>
                         <td>{{ proyecto.diseñador }}</td>
                         <td>{{ proyecto.cliente }}</td>
-                        <td><a href="">{{ proyecto.nombre }}</a></td>
+                        <td>{{ proyecto.cliente.first_name }} {{ proyecto.cliente.last_name }}</td>
+                        <td><a href="{% url 'actualizar_proyecto' proyecto.pk %}">{{ proyecto.nombre }}</a></td>
+                        <td><a href="{% url 'eliminar_proyecto' proyecto.pk %}" onclick="return confirmarEliminacion();">Eliminar</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </main>
-</body>
-
-</html>
+    </div>
+</main>
+<script>
+    function confirmarEliminacion() {
+        if (confirm("¿Estás seguro de que deseas eliminar este proyecto?")) {
+            return true;
+        }
+        return false;
+    }
+</script>
+{%endblock%}

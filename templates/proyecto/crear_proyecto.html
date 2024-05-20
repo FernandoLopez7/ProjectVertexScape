@@ -1,0 +1,33 @@
+{% extends "predeterminados/base.html"%}
+{% load static %}
+{% block titulo%} Crear Proyecto {%endblock%}
+{% block estilos%}
+<link rel="stylesheet" type="text/css" href="{% static 'css/stylesform.css' %}" />
+{%endblock%}
+{% block contenido%}
+<main class="main ">
+    <form method="post" class="form-style">
+        <div class="container-form">
+            {% csrf_token %}
+            <div class="row">
+                <div class="column">
+                    <label for="id_cliente">Cliente:</label>
+                    {{ form.cliente }}
+                    <label for="id_nombre">Nombre:</label>
+                    {{ form.nombre }}
+                </div>
+                <div class="column">
+                    <label for="id_notas_personales">Notas Personales:</label>
+                    {{ form.notas_personales }}
+                </div>
+            </div>
+        </div>
+        <div class="row unity-row">
+            <!-- Contenido para la segunda fila, que se integra con Unity -->
+        </div>
+        <div class="row buttons-container">
+            <button class="button-arounder" type="submit">Guardar</button>
+        </div>
+    </form>
+</main>
+{%endblock%}
