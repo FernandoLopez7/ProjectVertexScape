@@ -165,7 +165,6 @@ if DEBUG:
     FIREBASE_JSON_PATH = os.path.join(BASE_DIR, 'config', 'vertexscape-firebase-adminsdk-5niic-13b7c7c631.json')
 else:
     FIREBASE_JSON_PATH = '/etc/secrets/vertexscape-firebase-adminsdk-5niic-13b7c7c631.json'
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # # Login
 LOGIN_URL = 'login'
