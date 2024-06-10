@@ -1,3 +1,7 @@
+import django
+from django.utils.translation import gettext
+
+django.utils.translation.ugettext = gettext
 """
 Django settings for VertexScape project.
 
@@ -48,6 +52,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'Usuarios',
     'Proyectos',
+    
+    'rest_framework',
+    'rest_framework.authtoken',
+    'drf_yasg',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +66,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'Proyectos.middleware.GZipMiddleware',
 ]
 
 ROOT_URLCONF = 'VertexScape.urls'
@@ -132,7 +141,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -157,3 +166,20 @@ FIREBASE_JSON_PATH = os.path.join(BASE_DIR, 'config', 'vertexscape-firebase-admi
 # # Login
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = reverse_lazy('index')
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+}

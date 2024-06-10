@@ -45,3 +45,7 @@ def eliminar_proyecto(request, pk):
     proyecto = get_object_or_404(Proyecto, pk=pk)
     proyecto.delete()
     return redirect('index')
+
+
+# def juego_view(request):
+#     return render(request, 'juego.html')

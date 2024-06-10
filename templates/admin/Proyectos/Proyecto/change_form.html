@@ -2,5 +2,7 @@
 
 {% block submit_buttons_bottom %}
     {{ block.super }}
-    <a href="{% url 'actualizar_proyecto' original.pk %}" class="button">Visualizar Proyecto</a>
+    {% if original.pk %}
+        <a href="{% url 'actualizar_proyecto' original.pk %}" class="button">Visualizar Proyecto</a>
+    {% endif %}
 {% endblock %}

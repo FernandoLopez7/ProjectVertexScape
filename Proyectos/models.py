@@ -36,31 +36,59 @@ class Categoria(models.Model):
         return self.nombre
 
     def save(self, *args, **kwargs):
-        # Save the object to get its ID
+        # Obtener la URL de la imagen original antes de guardar
+        if self.pk:
+            old_instance = Categoria.objects.get(pk=self.pk)
+            old_image_url = old_instance.imgenobjeto
+        else:
+            old_instance = None
+            old_image_url = None
+
+        # Guardar el objeto para obtener su ID
         super(Categoria, self).save(*args, **kwargs)
 
-        # Get the image file
+        # Obtener el archivo de imagen
         image_file = self.imgenobjeto
 
-        if image_file:
-            # Get a reference to the Firebase Storage bucket
+        # Verificar si hay una nueva imagen
+        if image_file and (not old_image_url or old_image_url != image_file):
+            # Obtener una referencia al bucket de Firebase Storage
             bucket = storage.bucket()
 
-            # Upload the image file to Firebase Storage
+            # Subir el nuevo archivo de imagen a Firebase Storage
             blob = bucket.blob(f'categorias/{self.id}/{image_file.name}')
             with open(image_file.path, 'rb') as file:
                 content_type, _ = guess_type(image_file.name)
                 blob.upload_from_file(file, content_type=content_type or 'application/octet-stream')
 
-                    # Get a signed URL with a token that expires in one hour
-            expiration = datetime.timedelta(days=3285)
-            url = blob.generate_signed_url(expiration=expiration, method='GET')
+            # Hacer que el blob sea públicamente accesible
+            blob.make_public()
 
-            # Update the image URL to point to the signed URL
+            # Obtener la URL pública
+            url = blob.public_url
+
+            # Actualizar la URL de la imagen para que apunte a la URL pública
             self.imgenobjeto = url
-            super(Categoria, self).save(*args, **kwargs)
-            
-            default_storage.delete(image_file.name)
+            super(Categoria, self).save(update_fields=['imgenobjeto'])
+
+            # Eliminar el archivo local si no es necesario
+            default_storage.delete(image_file.path)
+
+            # Eliminar la imagen anterior de Firebase Storage
+            if old_instance and old_image_url:
+                try:
+                    old_image_url_str = str(old_image_url)
+                    old_blob_name_parts = old_image_url_str.split('/')
+                    old_image_name_with_exp = old_blob_name_parts[-1]
+                    old_image_name = old_image_name_with_exp.split('?')[0]
+                    old_blob = bucket.blob(f'categorias/{self.id}/{old_image_name}')
+                    old_blob.delete()
+                    print(f"Imagen antigua '{old_blob.name}' eliminada correctamente de Firebase.")
+                except Exception as e:
+                    print(f"Error al eliminar la imagen antigua de Firebase: {e}")
+        else:
+            # Si la imagen no ha cambiado, no volver a guardar el objeto
+            super(Categoria, self).save(update_fields=['nombre', 'fecha_modificacion'])
     
 @receiver(pre_delete, sender=Categoria)
 def eliminar_imagen_de_firebase(sender, instance, **kwargs):
@@ -81,7 +109,7 @@ class Objeto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='Categoria')
     nombre = models.CharField(max_length=20, blank=True, null=True, default="Nuevo Objeto")
     imgenobjeto = models.ImageField(verbose_name="Imagen", max_length=1000, default="")
-    # unityobjeto = models.FileField(verbose_name="UnityProject", max_length=10000, default="")
+    unityobjeto = models.FileField(verbose_name="ObjProject", max_length=10000, default="")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
@@ -92,54 +120,100 @@ class Objeto(models.Model):
     def __str__(self):
         return self.nombre
 
-    # def save(self, *args, **kwargs):
-    #     # Save the object to get its ID
-    #     super(Categoria, self).save(*args, **kwargs)
+    def save(self, *args, **kwargs):
+        # Guardar las URLs de los archivos originales antes de guardar
+        if self.pk:
+            old_instance = Objeto.objects.get(pk=self.pk)
+            old_image_url = old_instance.imgenobjeto
+            old_file_url = old_instance.unityobjeto
+        else:
+            old_instance = None
+            old_image_url = None
+            old_file_url = None
 
-    #     # Get the image file
-    #     image_file = self.imgenobjeto
+        # Guardar el objeto para obtener su ID
+        super(Objeto, self).save(*args, **kwargs)
 
-    #     if image_file:
-    #         # Get a reference to the Firebase Storage bucket
-    #         bucket = storage.bucket()
+        # Subir la nueva imagen si se proporciona
+        image_file = self.imgenobjeto
+        if image_file and (not old_image_url or old_image_url != image_file):
+            self.upload_to_firebase(image_file, 'ObjetoImg', 'imgenobjeto', old_image_url)
 
-    #         # Upload the image file to Firebase Storage
-    #         blob = bucket.blob(f'objetos/{self.id}/{image_file.name}')
-    #         with open(image_file.path, 'rb') as file:
-    #             content_type, _ = guess_type(image_file.name)
-    #             blob.upload_from_file(file, content_type=content_type or 'application/octet-stream')
+        # Subir el nuevo archivo unityobjeto si se proporciona
+        unity_file = self.unityobjeto
+        if unity_file and (not old_file_url or old_file_url != unity_file):
+            self.upload_to_firebase(unity_file, 'AssetsBundle', 'unityobjeto', old_file_url)
 
-    #                 # Get a signed URL with a token that expires in one hour
-    #         expiration = datetime.timedelta(days=3285)
-    #         url = blob.generate_signed_url(expiration=expiration, method='GET')
+    def upload_to_firebase(self, file, folder, field, old_url):
+        # Obtener una referencia al bucket de Firebase Storage
+        bucket = storage.bucket()
 
-    #         # Update the image URL to point to the signed URL
-    #         self.imgenobjeto = url
-    #         super(Categoria, self).save(*args, **kwargs)
-            
-    #         default_storage.delete(image_file.name)
+        # Subir el nuevo archivo a Firebase Storage
+        blob = bucket.blob(f'{folder}/{self.id}/{file.name}')
+        with open(file.path, 'rb') as file_obj:
+            content_type, _ = guess_type(file.name)
+            blob.upload_from_file(file_obj, content_type=content_type or 'application/octet-stream')
 
-# @receiver(pre_delete, sender=Objeto)
-# def eliminar_imagen_de_firebase(sender, instance, **kwargs):
-#     if instance.imgenobjeto:
-#         try:
-#             image_url = str(instance.imgenobjeto)
-#             image_path_parts = image_url.split('/')
-#             image_name_with_exp = image_path_parts[-1]
-#             image_name = image_name_with_exp.split('?')[0]
-#             bucket = storage.bucket()
-#             blob = bucket.blob(f'categorias/{instance.id}/{image_name}')
-#             blob.delete()
-#         except Exception as e:
-#             # Manejar el error de la manera que prefieras
-#             print(f"Error al eliminar la imagen de Firebase: {e}")
+        # Hacer que el blob sea públicamente accesible
+        blob.make_public()
+
+        # Obtener la URL pública
+        url = blob.public_url
+
+        # Actualizar el campo correspondiente con la nueva URL
+        setattr(self, field, url)
+        super(Objeto, self).save(update_fields=[field])
+
+        # Eliminar el archivo local si no es necesario
+        default_storage.delete(file.path)
+
+        # Eliminar el archivo antiguo de Firebase Storage
+        if old_url:
+            try:
+                old_url_str = str(old_url)
+                old_blob_name_parts = old_url_str.split('/')
+                old_file_name_with_exp = old_blob_name_parts[-1]
+                old_file_name = old_file_name_with_exp.split('?')[0]
+                old_blob = bucket.blob(f'{folder}/{self.id}/{old_file_name}')
+                old_blob.delete()
+                print(f"Archivo antiguo '{old_blob.name}' eliminado correctamente de Firebase.")
+            except Exception as e:
+                print(f"Error al eliminar el archivo antiguo de Firebase: {e}")
+
+@receiver(pre_delete, sender=Objeto)
+def eliminar_archivos_de_firebase(sender, instance, **kwargs):
+    if instance.imgenobjeto:
+        try:
+            image_url = str(instance.imgenobjeto)
+            image_path_parts = image_url.split('/')
+            image_name_with_exp = image_path_parts[-1]
+            image_name = image_name_with_exp.split('?')[0]
+            bucket = storage.bucket()
+            blob = bucket.blob(f'ObjetoImg/{instance.id}/{image_name}')
+            blob.delete()
+            print(f"Imagen '{blob.name}' eliminada correctamente de Firebase.")
+        except Exception as e:
+            print(f"Error al eliminar la imagen de Firebase: {e}")
+
+    if instance.unityobjeto:
+        try:
+            file_url = str(instance.unityobjeto)
+            file_path_parts = file_url.split('/')
+            file_name_with_exp = file_path_parts[-1]
+            file_name = file_name_with_exp.split('?')[0]
+            bucket = storage.bucket()
+            blob = bucket.blob(f'AssetsBundle/{instance.id}/{file_name}')
+            blob.delete()
+            print(f"Archivo '{blob.name}' eliminado correctamente de Firebase.")
+        except Exception as e:
+            print(f"Error al eliminar el archivo de Firebase: {e}")
 
     
 class Proyecto(models.Model):
     diseñador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Diseñador')
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Cliente')
     nombre = models.CharField(max_length=20, blank=True, null=True, default="Nuevo proyecto")
-    # unityproyect = models.FileField((""), upload_to=None, max_length=100)
+    unityproyect = models.FileField((""), upload_to=None, max_length=100, default="")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
     notas_personales = models.TextField(blank=True, null=True)
