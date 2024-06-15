@@ -164,6 +164,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 AUTH_USER_MODEL = "Usuarios.User" 
 
 # # Para la conexcion segura de firebase
+# FIREBASE_JSON_PATH = os.path.join(BASE_DIR, 'config', 'vertexscape-firebase-adminsdk-5niic-13b7c7c631.json')
+
 if DEBUG:
     FIREBASE_JSON_PATH = os.path.join(BASE_DIR, 'config', 'vertexscape-firebase-adminsdk-5niic-13b7c7c631.json')
 else:

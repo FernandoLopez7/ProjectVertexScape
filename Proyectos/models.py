@@ -16,11 +16,7 @@ from django.dispatch import receiver
 
 from django.core.files.storage import default_storage
 
-
-cred = credentials.Certificate(settings.FIREBASE_JSON_PATH)
-STORAGE_BUCKET_NAME = 'vertexscape.appspot.com'
-initialize_app(cred, {'storageBucket': STORAGE_BUCKET_NAME})
-
+from .firebase import bucket
 
 class Categoria(models.Model):
     nombre = models.CharField(max_length=20, blank=True, null=True, default="Categoria")
@@ -213,7 +209,7 @@ class Proyecto(models.Model):
     diseñador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Diseñador')
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Cliente')
     nombre = models.CharField(max_length=20, blank=True, null=True, default="Nuevo proyecto")
-    unityproyect = models.FileField((""), upload_to=None, max_length=100, default="")
+    unityproyect = models.JSONField(default=dict, verbose_name="Unity Habitacion", blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
     notas_personales = models.TextField(blank=True, null=True)
@@ -224,3 +220,34 @@ class Proyecto(models.Model):
 
     def __str__(self):
         return self.nombre
+    
+    def save(self, *args, **kwargs):
+        if not self.unityproyect:
+            self.unityproyect = {
+                "id": self.id,
+                "habitacion": "",
+                "objeto": ""
+            }
+        super(Proyecto, self).save(*args, **kwargs)
+        
+        # Update the unityproyect with the correct id after the first save
+        if self.unityproyect["id"] == 0:
+            self.unityproyect["id"] = self.id
+            super(Proyecto, self).save(update_fields=['unityproyect'])
+            
+            
+@receiver(pre_delete, sender=Proyecto)
+def eliminar_proyectos_de_firebase(sender, instance, **kwargs):
+    if instance.unityproyect:
+        try:
+            bucket = storage.bucket()
+            for key, value in instance.unityproyect.items():
+                if value and key in ['habitacion', 'objeto']:
+                    blob_url_parts = value.split('/')
+                    blob_name_with_exp = blob_url_parts[-1]
+                    blob_name = blob_name_with_exp.split('?')[0]
+                    blob = bucket.blob(f'UnityProyect/{instance.id}/{blob_name}')
+                    blob.delete()
+                    print(f"Archivo '{blob.name}' eliminado correctamente de Firebase.")
+        except Exception as e:
+            print(f"Error al eliminar el archivo de Firebase: {e}")
