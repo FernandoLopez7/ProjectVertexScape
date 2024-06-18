@@ -18,7 +18,7 @@ import environ
 
 # Read .env file
 env = environ.Env()
-environ.Env.read_env(env_file='config/.env')
+environ.Env.read_env(env_file='config/.env.production')
 
 
 from pathlib import Path
@@ -56,6 +56,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_yasg',
+
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -88,7 +90,11 @@ TEMPLATES = [
     },
 ]
 
+# solicitudes HTTP tradicionales
 WSGI_APPLICATION = 'VertexScape.wsgi.application'
+
+# conexiones WebSocket y otros protocolos asincrónicos.
+ASGI_APPLICATION = 'VertexScape.asgi.application'
 
 
 # Database
@@ -191,3 +197,14 @@ SWAGGER_SETTINGS = {
         }
     },
 }
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Usa esto para desarrollo
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',  # Usa esto para producción con Redis
+        # 'CONFIG': {
+        #     "hosts": [('127.0.0.1', 6379)],  # Configura la conexión a tu servidor Redis
+        # },
+    },
+}
+

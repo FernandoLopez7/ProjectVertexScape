@@ -47,5 +47,5 @@ def eliminar_proyecto(request, pk):
     return redirect('index')
 
 
-# def juego_view(request):
-#     return render(request, 'juego.html')
+def viewScene(request):
+    return render(request, 'cameraDemo.html')

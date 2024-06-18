@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Stream</title>
+</head>
+<body>
+    <h1>WebSocket Client</h1>
+    <img id="streamImage" alt="Streaming Image" />
+
+    <script>
+        const socket = new WebSocket('ws://localhost:8000/ws/jsonScene/');
+
+        socket.onopen = function(event) {
+            console.log('WebSocket connection established');
+
+            // Suscribirse al grupo de clientes web
+            socket.send(JSON.stringify({
+                'command': 'subscribe',
+                'group': 'web_clients_group',
+            }));
+        };
+
+        socket.onmessage = function(event) {
+            console.log('Received data from server');
+            
+            if (event.data instanceof Blob) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const arrayBuffer = this.result;
+                    const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'image/jpeg' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const img = document.getElementById('streamImage');
+                    img.src = url;
+                };
+                reader.readAsArrayBuffer(event.data);
+            } else {
+                console.log('Received non-binary data:', event.data);
+            }
+        };
+
+        socket.onerror = function(error) {
+            console.error('WebSocket error:', error);
+        };
+
+        socket.onclose = function(event) {
+            console.log('WebSocket connection closed:', event.code, event.reason);
+        };
+
+        // Function to convert ArrayBuffer to base64 URL
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return 'data:image/jpeg;base64,' + btoa(binary);
+        }
+    </script>
+</body>
+</html>

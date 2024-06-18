@@ -14,6 +14,7 @@ urlpatterns = [
     path('eliminar/<int:pk>', views.eliminar_proyecto, name='eliminar_proyecto'),
     path('api/', include(router.urls)),
     path('api/unity-proyecto/', api.UnityProyectoAPIView.as_view(), name='unity-proyecto'),
-    # path('juego/', views.juego_view, name='juego'),
+    path('sceneTest/', views.viewScene, name='websocket'),
     # Agrega más URLs según sea necesario
 ]
+
