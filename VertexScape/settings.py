@@ -65,7 +65,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -208,11 +208,8 @@ CHANNEL_LAYERS = {
     },
 }
 
-CSRF_COOKIE_SECURE = True  # Asegúrate de esto si estás usando HTTPS
 CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = True
 
-
-CSRF_TRUSTED_ORIGINS = [
-    'https://projectvertexscape.onrender.com/',
-]
+CSRF_TRUSTED_ORIGINS = ['*']
+CSRF_COOKIE_SECURE = False
