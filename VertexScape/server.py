@@ -18,7 +18,7 @@ async def handler(websocket, path):
         # Remove the client from the set of connected clients
         connected_clients.remove(websocket)
 
-start_server = websockets.serve(handler, "localhost", 6789)
+start_server = websockets.serve(handler, "0.0.0.0", 6789)
 # start_server = websockets.serve(handler, "example.com", 80)
 # para conección segura 443
 # para conección NO segura 80
