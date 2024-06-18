@@ -28,6 +28,14 @@ from drf_yasg import openapi
 
 from rest_framework.authentication import TokenAuthentication
 
+from django.views.decorators.csrf import csrf_exempt
+
+admin.autodiscover()
+for model, model_admin in admin.site._registry.items():
+    model_admin.add_view = csrf_exempt(model_admin.add_view)
+    model_admin.change_view = csrf_exempt(model_admin.change_view)
+    model_admin.changelist_view = csrf_exempt(model_admin.changelist_view)
+    model_admin.delete_view = csrf_exempt(model_admin.delete_view)
 
 schema_view = get_schema_view(
     openapi.Info(
