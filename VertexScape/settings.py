@@ -208,6 +208,11 @@ CHANNEL_LAYERS = {
     },
 }
 
+CSRF_COOKIE_SECURE = True  # Asegúrate de esto si estás usando HTTPS
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = True
+
+
 CSRF_TRUSTED_ORIGINS = [
     'https://projectvertexscape.onrender.com/',
 ]
