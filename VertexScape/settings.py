@@ -200,8 +200,8 @@ SWAGGER_SETTINGS = {
 
 CHANNEL_LAYERS = {
     'default': {
-        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Usa esto para desarrollo
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',  # Usa esto para producción con Redis
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Usa esto para desarrollo
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',  # Usa esto para producción con Redis
         # 'CONFIG': {
         #     "hosts": [('127.0.0.1', 6379)],  # Configura la conexión a tu servidor Redis
         # },
