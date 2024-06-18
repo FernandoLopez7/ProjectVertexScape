@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from .models import User
 
 # # Para el login 
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
 from .forms import EmailAuthenticationForm, PerfilForm
 
 def iniciar_sesion(request):
@@ -29,3 +29,8 @@ def editar_perfil(request):
     else:
         form = PerfilForm(instance=request.user)
     return render(request, 'usuarios/editar_perfil.html', {'form': form})
+
+@login_required
+def cerrar_sesion(request):
+    logout(request)
+    return redirect('login')

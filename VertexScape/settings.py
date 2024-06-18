@@ -18,7 +18,7 @@ import environ
 
 # Read .env file
 env = environ.Env()
-environ.Env.read_env(env_file='config/.env.production')
+environ.Env.read_env(env_file='config/.env')
 
 
 from pathlib import Path
