@@ -20,8 +20,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'VertexScape.settings')
 # application = get_asgi_application()
 django_application = get_asgi_application()
 
-django_application = CsrfViewMiddleware(django_application)
-
 application = ProtocolTypeRouter({
     "http": django_application,
     "websocket": AuthMiddlewareStack(
