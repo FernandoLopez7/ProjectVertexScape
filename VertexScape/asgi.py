@@ -12,12 +12,15 @@ import os
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
+from django.middleware.csrf import CsrfViewMiddleware
 import Proyectos.routing
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'VertexScape.settings')
 
 # application = get_asgi_application()
 django_application = get_asgi_application()
+
+django_application = CsrfViewMiddleware(django_application)
 
 application = ProtocolTypeRouter({
     "http": django_application,
