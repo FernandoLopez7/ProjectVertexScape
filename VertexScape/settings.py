@@ -144,7 +144,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
@@ -215,3 +215,4 @@ CSRF_TRUSTED_ORIGINS = ['*']
 CSRF_COOKIE_SECURE = False
 
 CSRF_COOKIE_SECURE_ADMIN = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
