@@ -69,7 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'Proyectos.middleware.DisableCSRFMiddleware',
+    # 'Proyectos.middleware.GZipMiddleware',
 ]
 
 ROOT_URLCONF = 'VertexScape.urls'
@@ -214,4 +214,5 @@ CSRF_USE_SESSIONS = False
 CSRF_TRUSTED_ORIGINS = ['*']
 CSRF_COOKIE_SECURE = False
 
-ADMIN_URL = 'admin/'
+CSRF_COOKIE_SECURE_ADMIN = False
+CSRF_COOKIE_SAMESITE_ADMIN = 'Lax'
