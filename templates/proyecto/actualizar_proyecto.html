@@ -28,7 +28,7 @@
             <img id="streamImage" alt="Streaming Image" />
 
             <script>
-                const socket = new WebSocket('ws://localhost:8000/ws/jsonScene/');
+                const socket = new WebSocket('wss://projectvertexscape.onrender.com:10000/ws/jsonScene/');
 
                 socket.onopen = function (event) {
                     console.log('WebSocket connection established');
