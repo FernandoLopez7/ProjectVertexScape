@@ -1,9 +1,7 @@
-# manejan las conexiones WebSocket
 import asyncio
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 import logging
-import base64
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +17,6 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
         if text_data:
             logger.info(f"Received text data: {text_data}")
             try:
-                # Parse the JSON data
                 data = json.loads(text_data)
 
                 # Check if the message is a command to subscribe to a group
@@ -29,7 +26,14 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
                         self.channel_name  # Channel name of this consumer
                     )
                     logger.info(f"Subscribed to group: {data['group']}")
-
+                else:
+                    await self.channel_layer.group_send(
+                        "web_clients_group",
+                        {
+                            "type": "web_data",
+                            "data": text_data
+                        }
+                    )
             except json.JSONDecodeError:
                 logger.error("Invalid JSON format")
                 await self.send(text_data=json.dumps({
@@ -37,20 +41,18 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
                 }))
 
         if bytes_data:
-            # logger.info(f"Received bytes data: {bytes_data}")
-            self.serverSend(bytes_data)
-
-    def serverSend(self, data):
-        asyncio.create_task(self.channel_layer.group_send(
-            "web_clients_group",
-            {
-                "type": "web_data",
-                "data": data
-            }
-        ))
+            await self.channel_layer.group_send(
+                "web_clients_group",
+                {
+                    "type": "web_data",
+                    "data": bytes_data
+                }
+            )
 
     async def web_data(self, event):
-        # Este método se llama cuando se envían datos desde el servidor al grupo de clientes web
         data = event['data']
-        await self.send(bytes_data=data)
-        logger.info(f"Data sent to web clients group: {data}")  # Verificar datos enviados
+        if isinstance(data, bytes):
+            await self.send(bytes_data=data)
+        else:
+            await self.send(text_data=data)
+        #logger.info(f"Data sent to web clients group: {data}") #comprobado, si funciona

@@ -2,18 +2,66 @@
 <html lang="en">
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Camera Stream</title>
+    <title>WebRTC Client</title>
+    <style>
+        #status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        .connected {
+            background-color: green;
+        }
+        .disconnected {
+            background-color: red;
+        }
+    </style>
 </head>
 <body>
     <h1>WebSocket Client</h1>
+    <div id="status" class="disconnected"></div>
+    <p id="audioStatus">Audio status: Not connected</p>
     <img id="streamImage" alt="Streaming Image" />
+    <audio id="remoteAudio" autoplay></audio>
 
     <script>
-        const socket = new WebSocket('wss://projectvertexscape.onrender.com:10000/ws/jsonScene/');
+        const socket = new WebSocket('ws://localhost:8000/ws/jsonScene/');
+        let peerConnection;
+        let localStream;
+        const config = {
+            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+        };
+
+        function updateConnectionStatus(isConnected) {
+            const statusElement = document.getElementById('status');
+            if (isConnected) {
+                statusElement.classList.remove('disconnected');
+                statusElement.classList.add('connected');
+            } else {
+                statusElement.classList.remove('connected');
+                statusElement.classList.add('disconnected');
+            }
+        }
+
+        async function start() {
+            try {
+                // Request access to the microphone
+                localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                document.getElementById('audioStatus').innerText = "Microphone access granted";
+
+                // Create peer connection and add local stream
+                createPeerConnection();
+                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            } catch (err) {
+                console.error('Error accessing media devices.', err);
+                document.getElementById('audioStatus').innerText = "Microphone access denied";
+                updateConnectionStatus(false);
+            }
+        }
 
         socket.onopen = function(event) {
             console.log('WebSocket connection established');
-
+            updateConnectionStatus(true);
             // Suscribirse al grupo de clientes web
             socket.send(JSON.stringify({
                 'command': 'subscribe',
@@ -21,43 +69,95 @@
             }));
         };
 
-        socket.onmessage = function(event) {
+        socket.onmessage = async function(event) {
             console.log('Received data from server');
-            
-            if (event.data instanceof Blob) {
+
+            if (typeof event.data === "string") {
+                const message = JSON.parse(event.data);
+
+                if (!peerConnection) {
+                    createPeerConnection();
+                }
+
+                if (message.type === 'offer') {
+                    console.log('Received offer:', message.sdp);
+                    if (peerConnection.signalingState !== 'stable' && peerConnection.signalingState !== 'have-remote-offer') {
+                        console.error('Received offer in invalid state:', peerConnection.signalingState);
+                        return;
+                    }
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
+                    const answer = await peerConnection.createAnswer();
+                    await peerConnection.setLocalDescription(answer);
+                    socket.send(JSON.stringify({ type: 'answer', sdp: answer.sdp }));
+                } else if (message.type === 'answer') {
+                    console.log('Received answer:', message.sdp);
+                    if (peerConnection.signalingState !== 'have-local-offer') {
+                        console.error('Received answer in invalid state:', peerConnection.signalingState);
+                        return;
+                    }
+                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: message.sdp }));
+                } else if (message.type === 'ice') {
+                    console.log('Received ICE candidate:', message.candidate);
+                    const candidate = new RTCIceCandidate({ sdpMLineIndex: message.sdpMLineIndex, candidate: message.candidate });
+                    await peerConnection.addIceCandidate(candidate);
+                }
+            } else if (event.data instanceof Blob) {
                 const reader = new FileReader();
                 reader.onload = function() {
                     const arrayBuffer = this.result;
                     const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'image/jpeg' });
                     const url = URL.createObjectURL(blob);
-                    
-                    const img = document.getElementById('streamImage');
-                    img.src = url;
+                    document.getElementById('streamImage').src = url;
                 };
                 reader.readAsArrayBuffer(event.data);
-            } else {
-                console.log('Received non-binary data:', event.data);
             }
         };
 
+        function createPeerConnection() {
+            peerConnection = new RTCPeerConnection(config);
+
+            peerConnection.onicecandidate = function(event) {
+                if (event.candidate) {
+                    console.log('Sending ICE candidate:', event.candidate);
+                    socket.send(JSON.stringify({ type: 'ice', candidate: event.candidate.candidate, sdpMid: event.candidate.sdpMid, sdpMLineIndex: event.candidate.sdpMLineIndex }));
+                }
+            };
+
+            peerConnection.ontrack = function(event) {
+                console.log('Track received:', event.track);
+                document.getElementById('remoteAudio').srcObject = event.streams[0];
+                document.getElementById('audioStatus').innerText = "Audio status: Connected";
+            };
+
+            peerConnection.oniceconnectionstatechange = function() {
+                console.log('ICE connection state change:', peerConnection.iceConnectionState);
+                if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
+                    updateConnectionStatus(true);
+                } else {
+                    updateConnectionStatus(false);
+                }
+            };
+
+            peerConnection.onsignalingstatechange = function() {
+                console.log('Signaling state change:', peerConnection.signalingState);
+            };
+        }
+
         socket.onerror = function(error) {
             console.error('WebSocket error:', error);
+            updateConnectionStatus(false);
         };
 
         socket.onclose = function(event) {
             console.log('WebSocket connection closed:', event.code, event.reason);
+            updateConnectionStatus(false);
         };
 
-        // Function to convert ArrayBuffer to base64 URL
-        function arrayBufferToBase64(buffer) {
-            let binary = '';
-            const bytes = new Uint8Array(buffer);
-            const len = bytes.byteLength;
-            for (let i = 0; i < len; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return 'data:image/jpeg;base64,' + btoa(binary);
-        }
+        window.addEventListener('beforeunload', () => {
+            socket.close();
+        });
+
+        start(); // Start the process of requesting microphone access and initializing WebRTC
     </script>
 </body>
 </html>
