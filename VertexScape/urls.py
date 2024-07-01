@@ -28,6 +28,12 @@ from drf_yasg import openapi
 
 from rest_framework.authentication import TokenAuthentication
 
+from django.views.decorators.csrf import csrf_exempt
+
+admin.site.login = csrf_exempt(admin.site.login)
+admin.site.logout = csrf_exempt(admin.site.logout)
+admin.site.index = csrf_exempt(admin.site.index)
+admin.site.password_change = csrf_exempt(admin.site.password_change)
 
 schema_view = get_schema_view(
     openapi.Info(

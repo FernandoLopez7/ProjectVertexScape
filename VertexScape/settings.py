@@ -65,7 +65,7 @@ MIDDLEWARE = [
     "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -144,7 +144,7 @@ USE_I18N = True
 
 USE_TZ = True
 
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
@@ -200,11 +200,19 @@ SWAGGER_SETTINGS = {
 
 CHANNEL_LAYERS = {
     'default': {
-        # 'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Usa esto para desarrollo
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',  # Usa esto para producción con Redis
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',  # Usa esto para desarrollo
+        # 'BACKEND': 'channels_redis.core.RedisChannelLayer',  # Usa esto para producción con Redis
         # 'CONFIG': {
         #     "hosts": [('127.0.0.1', 6379)],  # Configura la conexión a tu servidor Redis
         # },
     },
 }
 
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
+
+CSRF_TRUSTED_ORIGINS = ['*']
+CSRF_COOKIE_SECURE = False
+
+CSRF_COOKIE_SECURE_ADMIN = False
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

@@ -25,7 +25,7 @@
     <audio id="remoteAudio" autoplay></audio>
 
     <script>
-        const socket = new WebSocket('ws://localhost:8000/ws/jsonScene/');
+        const socket = new WebSocket('wss://projectvertexscape.onrender.com/ws/jsonScene/');
         let peerConnection;
         let localStream;
         const config = {
