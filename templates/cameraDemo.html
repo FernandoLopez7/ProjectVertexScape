@@ -4,44 +4,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebRTC Client</title>
     <style>
-        #status {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-        }
-        .connected {
-            background-color: green;
-        }
-        .disconnected {
-            background-color: red;
+        canvas {
+            border: 1px solid black;
         }
     </style>
 </head>
 <body>
     <h1>WebSocket Client</h1>
-    <div id="status" class="disconnected"></div>
     <p id="audioStatus">Audio status: Not connected</p>
     <img id="streamImage" alt="Streaming Image" />
     <audio id="remoteAudio" autoplay></audio>
+    <canvas id="audioCanvas" width="640" height="100"></canvas>
 
     <script>
         const socket = new WebSocket('wss://projectvertexscape.onrender.com/ws/jsonScene/');
         let peerConnection;
         let localStream;
+        let audioTrack;
         const config = {
             iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
         };
-
-        function updateConnectionStatus(isConnected) {
-            const statusElement = document.getElementById('status');
-            if (isConnected) {
-                statusElement.classList.remove('disconnected');
-                statusElement.classList.add('connected');
-            } else {
-                statusElement.classList.remove('connected');
-                statusElement.classList.add('disconnected');
-            }
-        }
 
         async function start() {
             try {
@@ -51,17 +33,66 @@
 
                 // Create peer connection and add local stream
                 createPeerConnection();
-                localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+                audioTrack = localStream.getAudioTracks()[0];
+                peerConnection.addTrack(audioTrack, localStream);
+                visualizeAudio(localStream);
             } catch (err) {
                 console.error('Error accessing media devices.', err);
                 document.getElementById('audioStatus').innerText = "Microphone access denied";
-                updateConnectionStatus(false);
             }
+        }
+
+        function visualizeAudio(stream) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaStreamSource(stream);
+            const analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 2048;
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+
+            source.connect(analyser);
+
+            const canvas = document.getElementById('audioCanvas');
+            const canvasCtx = canvas.getContext('2d');
+
+            function draw() {
+                requestAnimationFrame(draw);
+
+                analyser.getByteTimeDomainData(dataArray);
+
+                canvasCtx.fillStyle = 'rgb(200, 200, 200)';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+                canvasCtx.lineWidth = 2;
+                canvasCtx.strokeStyle = 'rgb(0, 0, 0)';
+
+                canvasCtx.beginPath();
+
+                const sliceWidth = canvas.width * 1.0 / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 128.0;
+                    const y = v * canvas.height / 2;
+
+                    if (i === 0) {
+                        canvasCtx.moveTo(x, y);
+                    } else {
+                        canvasCtx.lineTo(x, y);
+                    }
+
+                    x += sliceWidth;
+                }
+
+                canvasCtx.lineTo(canvas.width, canvas.height / 2);
+                canvasCtx.stroke();
+            }
+
+            draw();
         }
 
         socket.onopen = function(event) {
             console.log('WebSocket connection established');
-            updateConnectionStatus(true);
             // Suscribirse al grupo de clientes web
             socket.send(JSON.stringify({
                 'command': 'subscribe',
@@ -89,13 +120,6 @@
                     const answer = await peerConnection.createAnswer();
                     await peerConnection.setLocalDescription(answer);
                     socket.send(JSON.stringify({ type: 'answer', sdp: answer.sdp }));
-                } else if (message.type === 'answer') {
-                    console.log('Received answer:', message.sdp);
-                    if (peerConnection.signalingState !== 'have-local-offer') {
-                        console.error('Received answer in invalid state:', peerConnection.signalingState);
-                        return;
-                    }
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: message.sdp }));
                 } else if (message.type === 'ice') {
                     console.log('Received ICE candidate:', message.candidate);
                     const candidate = new RTCIceCandidate({ sdpMLineIndex: message.sdpMLineIndex, candidate: message.candidate });
@@ -131,11 +155,6 @@
 
             peerConnection.oniceconnectionstatechange = function() {
                 console.log('ICE connection state change:', peerConnection.iceConnectionState);
-                if (peerConnection.iceConnectionState === 'connected' || peerConnection.iceConnectionState === 'completed') {
-                    updateConnectionStatus(true);
-                } else {
-                    updateConnectionStatus(false);
-                }
             };
 
             peerConnection.onsignalingstatechange = function() {
@@ -145,12 +164,10 @@
 
         socket.onerror = function(error) {
             console.error('WebSocket error:', error);
-            updateConnectionStatus(false);
         };
 
         socket.onclose = function(event) {
             console.log('WebSocket connection closed:', event.code, event.reason);
-            updateConnectionStatus(false);
         };
 
         window.addEventListener('beforeunload', () => {
