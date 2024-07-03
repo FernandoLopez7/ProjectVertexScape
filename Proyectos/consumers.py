@@ -27,13 +27,22 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
                     )
                     logger.info(f"Subscribed to group: {data['group']}")
                 else:
-                    await self.channel_layer.group_send(
-                        "web_clients_group",
-                        {
-                            "type": "web_data",
-                            "data": text_data
-                        }
-                    )
+                    if data.get('type') in ['offer', 'answer', 'ice']:
+                        # Forward signaling messages to both Unity and HTML clients
+                        await self.channel_layer.group_send(
+                            "web_clients_group",
+                            {
+                                "type": "web_data",
+                                "data": text_data
+                            }
+                        )
+                        await self.channel_layer.group_send(
+                            "unity_clients_group",
+                            {
+                                "type": "web_data",
+                                "data": text_data
+                            }
+                        )
             except json.JSONDecodeError:
                 logger.error("Invalid JSON format")
                 await self.send(text_data=json.dumps({
@@ -41,6 +50,7 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
                 }))
 
         if bytes_data:
+            logger.info(f"Received bytes data")
             await self.channel_layer.group_send(
                 "web_clients_group",
                 {
@@ -55,4 +65,4 @@ class CameraStreamConsumer(AsyncWebsocketConsumer):
             await self.send(bytes_data=data)
         else:
             await self.send(text_data=data)
-        #logger.info(f"Data sent to web clients group: {data}") #comprobado, si funciona
+        # logger.info(f"Data sent to groups: {data}") #comprobado, si funciona
