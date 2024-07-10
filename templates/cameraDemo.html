@@ -8,12 +8,43 @@
             border: 1px solid black;
         }
     </style>
+    <!-- <script>
+        function fetchData() {
+            const unityproyectId = document.getElementById('unityproyectId').value;
+            fetch(`/consume-api-ajax/${unityproyectId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    let listContainer = document.getElementById('object-list');
+                    listContainer.innerHTML = ''; // Clear previous data
+
+                    data.forEach(item => {
+                        let listItem = document.createElement('li');
+                        listItem.textContent = `Prefab Name: ${item.prefabName}, Text Content: ${item.textContent}`;
+                        listContainer.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script> -->
 </head>
 <body>
     <h1>WebSocket Client</h1>
     <p id="audioStatus">Audio status: Not connected</p>
     <img id="streamImage" alt="Streaming Image" />
-    <audio id="remoteAudio" autoplay></audio>
+    <audio id="remoteAudio" autoplay controls></audio>
+
+    <!-- <h1>Data from API</h1>
+    <input type="number" id="unityproyectId" placeholder="Enter Unity Project ID">
+    <button onclick="fetchData()">Agregar Comentarios</button>
+
+    <ul id="object-list">
+        {% for item in object_data %}
+            <li>Prefab Name: {{ item.prefabName }}, Text Content: {{ item.textContent }}</li>
+        {% endfor %}
+    </ul>
+
+    <button onclick="fetchData()">Agregar Comentarios</button> -->
+
     <canvas id="audioCanvas" width="640" height="100"></canvas>
 
     <script>
@@ -151,6 +182,20 @@
                 console.log('Track received:', event.track);
                 document.getElementById('remoteAudio').srcObject = event.streams[0];
                 document.getElementById('audioStatus').innerText = "Audio status: Connected";
+            
+                if (event.track.kind === 'audio') {
+                    const audioStream = new MediaStream();
+                    audioStream.addTrack(event.track);
+                    remoteAudio.srcObject = audioStream;
+                    event.track.enabled = true;
+                    event.track.onmute = () => {
+                        console.log('Track muted');
+                    };
+                    event.track.onunmute = () => {
+                        console.log('Track unmuted');
+                    };
+                    console.log('Audio track received and set to play:', event.track);
+                }
             };
 
             peerConnection.oniceconnectionstatechange = function() {
