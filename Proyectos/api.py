@@ -48,7 +48,9 @@ class UnityProyectoAPIView(APIView):
             id = serializer.validated_data['id']
             habitacion_file = serializer.validated_data['habitacion']
             objeto_file = serializer.validated_data['objeto']
-
+            material_pared = serializer.validated_data['material_pared']
+            material_piso = serializer.validated_data['material_piso']
+            
             # Verificar la existencia del proyecto
             try:
                 proyecto = Proyecto.objects.get(id=id)
@@ -82,11 +84,17 @@ class UnityProyectoAPIView(APIView):
             objeto_url = objeto_blob.public_url
 
             # Actualizar el campo unityproyect del proyecto
-            proyecto.unityproyect = {
+            unityproyect_data = proyecto.unityproyect or {}
+            unityproyect_data.update({
                 'id': id,
                 'habitacion': habitacion_url,
-                'objeto': objeto_url
-            }
+                'objeto': objeto_url,
+                'material_piso': material_piso,
+                'material_pared': material_pared
+                
+            })
+
+            proyecto.unityproyect = unityproyect_data
             proyecto.save()
 
             return Response(serializer.data, status=status.HTTP_200_OK)

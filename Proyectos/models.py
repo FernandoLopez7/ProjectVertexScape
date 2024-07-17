@@ -1,5 +1,6 @@
 import datetime
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 # Create your models here.
 # from django.contrib.auth.models import User
@@ -101,11 +102,23 @@ def eliminar_imagen_de_firebase(sender, instance, **kwargs):
             # Manejar el error de la manera que prefieras
             print(f"Error al eliminar la imagen de Firebase: {e}")
 
+class TipoHabitacion(models.TextChoices):
+    COCINA = 'COC', _('Cocina')
+    COMEDOR = 'COM', _('Comedor')
+    DORMITORIO = 'DO', _('Dormitorio')
+
 class Objeto(models.Model):
     categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='Categoria')
-    nombre = models.CharField(max_length=20, blank=True, null=True, default="Nuevo Objeto")
+    nombre = models.CharField(max_length=30, blank=True, null=True, default="Nuevo Objeto")
     imgenobjeto = models.ImageField(verbose_name="Imagen", max_length=1000, default="")
     unityobjeto = models.FileField(verbose_name="ObjProject", max_length=10000, default="")
+    descripcion = models.TextField(max_length=30, blank=True, null=True)
+    tipoHabitacion = models.CharField(
+        max_length=3,
+        choices=TipoHabitacion.choices,
+        default=TipoHabitacion.COCINA,
+        verbose_name="Tipo de Habitación"
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
 
@@ -208,7 +221,7 @@ def eliminar_archivos_de_firebase(sender, instance, **kwargs):
 class Proyecto(models.Model):
     diseñador = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Diseñador')
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='Cliente')
-    nombre = models.CharField(max_length=20, blank=True, null=True, default="Nuevo proyecto")
+    nombre = models.CharField(max_length=30, blank=True, null=True, default="Nuevo proyecto")
     unityproyect = models.JSONField(default=dict, verbose_name="Unity Habitacion", blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
@@ -226,7 +239,9 @@ class Proyecto(models.Model):
             self.unityproyect = {
                 "id": self.id,
                 "habitacion": "",
-                "objeto": ""
+                "objeto": "",
+                "material_pared": 0,
+                "material_piso": 0
             }
         super(Proyecto, self).save(*args, **kwargs)
         

@@ -33,3 +33,5 @@ class UnityProyectoSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     habitacion = serializers.JSONField()
     objeto = serializers.JSONField()
+    material_pared = serializers.IntegerField()
+    material_piso = serializers.IntegerField()
