@@ -11,6 +11,7 @@ urlpatterns = [
     path('', views.listar_proyectos, name='index'),
     path('crear/', views.crear_proyecto, name='crear_proyecto'),
     path('actualizar/<int:pk>', views.actualizar_proyecto, name='actualizar_proyecto'),
+    path('obt/<int:pk>', views.obtener_objetos, name='obtener_objetos'),
     path('eliminar/<int:pk>', views.eliminar_proyecto, name='eliminar_proyecto'),
     path('api/', include(router.urls)),
     path('api/unity-proyecto/', api.UnityProyectoAPIView.as_view(), name='unity-proyecto'),

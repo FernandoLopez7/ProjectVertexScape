@@ -4,6 +4,9 @@ from .models import Proyecto
 from .forms import ProyectoForm
 from django.contrib.auth.decorators import login_required
 
+import json
+from django.http import JsonResponse
+
 @login_required
 def listar_proyectos(request):
     usuario = request.user
@@ -33,11 +36,24 @@ def actualizar_proyecto(request, pk):
     if request.method == 'POST':
         form = ProyectoForm(request.POST, instance=proyecto)
         if form.is_valid():
-            form.save()
+            proyecto = form.save(commit=False)
+            objeto_list = json.loads(form.cleaned_data['objeto'])
+            proyecto.unityproyect['objeto'] = objeto_list
+            proyecto.save()
             return redirect('index')
     else:
         form = ProyectoForm(instance=proyecto)
-    return render(request, 'proyecto/actualizar_proyecto.html', {'form': form})
+    objeto_list = proyecto.unityproyect.get('objeto', [])
+    print(f"Contenido de objeto_list: {objeto_list}") 
+    objeto_list_json = json.dumps(objeto_list)  # Serializar JSON con comillas dobles
+    print(f"Contenido de objeto_list: {objeto_list_json}") 
+    return render(request, 'proyecto/actualizar_proyecto.html', {'form': form, 'proyecto_pk': proyecto.pk, 'objeto_list': objeto_list_json})
+
+@login_required
+def obtener_objetos(request, pk):
+    proyecto = get_object_or_404(Proyecto, pk=pk)
+    objeto_list = proyecto.unityproyect.get('objeto', [])
+    return JsonResponse({'objeto_list': objeto_list})
 
 
 @login_required

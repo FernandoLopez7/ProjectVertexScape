@@ -83,6 +83,137 @@
         <div class="row buttons-container">
             <button class="button-arounder" type="submit">Guardar</button>
         </div>
+        <div class="row">
+            <div class="column">
+                <label for="id_objeto">Objeto:</label>
+                <input type="hidden" id="id_objeto" name="objeto" value='{{ objeto_list|escapejs }}'>
+                <div id="objeto-editor"></div>
+            </div>
+        </div>
+        <div class="row buttons-container">
+            <button class="button-arounder" type="button" id="save-unity-fields">Guardar Unity Fields</button>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const rawJson = document.getElementById('id_objeto').value;
+        
+                let objetoList;
+                try {
+                    objetoList = JSON.parse(rawJson.replace(/\\u0022/g, '"'));
+                } catch (error) {
+                    console.error("Error al parsear JSON:", error);
+                    return;
+                }
+                console.log("Contenido de objetoList:", objetoList);
+        
+                const editorContainer = document.getElementById('objeto-editor');
+                let currentFocusId = null;
+                let cursorPosition = null;
+        
+                const updateEditor = () => {
+                    editorContainer.innerHTML = '';
+                    objetoList.forEach((objeto) => {
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <label for="objeto-${objeto.id}-textContent">Objeto ${objeto.id} TextContent:</label>
+                            <input type="text" id="objeto-${objeto.id}-textContent" value="${objeto.textContent || ''}" data-id="${objeto.id}">
+                        `;
+                        editorContainer.appendChild(div);
+                        // Añadir evento para detectar cambios por el usuario
+                        const inputElement = div.querySelector('input');
+                        inputElement.addEventListener('input', () => {
+                            inputElement.dataset.userModified = true;
+                        });
+                        // Detectar el foco y la posición del cursor
+                        inputElement.addEventListener('focus', () => {
+                            currentFocusId = objeto.id;
+                        });
+                        inputElement.addEventListener('blur', () => {
+                            if (currentFocusId === objeto.id) {
+                                cursorPosition = inputElement.selectionStart;
+                            }
+                        });
+                    });
+                    // Restaurar el foco y la posición del cursor
+                    if (currentFocusId !== null) {
+                        const focusedElement = document.getElementById(`objeto-${currentFocusId}-textContent`);
+                        if (focusedElement) {
+                            focusedElement.focus();
+                            if (cursorPosition !== null) {
+                                focusedElement.setSelectionRange(cursorPosition, cursorPosition);
+                            }
+                        } else {
+                            currentFocusId = null;  // Si el elemento enfocado ha sido eliminado, resetear el índice
+                            cursorPosition = null;
+                        }
+                    }
+                };
+                updateEditor();
+        
+                const fetchUpdates = () => {
+                    fetch("{% url 'obtener_objetos' proyecto_pk %}")
+                        .then(response => response.json())
+                        .then(data => {
+                            const newObjetoList = data.objeto_list;
+        
+                            // Mantener los cambios del usuario
+                            const userModifiedInputs = document.querySelectorAll('input[data-user-modified="true"]');
+                            userModifiedInputs.forEach(input => {
+                                const id = input.dataset.id;
+                                const objeto = newObjetoList.find(o => o.id === id);
+                                if (objeto) {
+                                    objeto.textContent = input.value;
+                                }
+                            });
+        
+                            objetoList = newObjetoList;
+                            updateEditor();  // Actualizar el editor con la nueva lista de objetos
+        
+                            // Restaurar el estado de modificación del usuario
+                            userModifiedInputs.forEach(input => {
+                                const inputField = document.querySelector(`#objeto-${input.dataset.id}-textContent`);
+                                if (inputField) {
+                                    inputField.dataset.userModified = true;
+                                }
+                            });
+                        })
+                        .catch(error => console.error('Error fetching updates:', error));
+                };
+        
+                setInterval(fetchUpdates, 8000);  // Consultar cada 8 segundos
+        
+                document.getElementById('save-unity-fields').addEventListener('click', function () {
+                    objetoList.forEach((objeto) => {
+                        const inputField = document.getElementById(`objeto-${objeto.id}-textContent`);
+                        if (inputField) {
+                            objeto.textContent = inputField.value;
+                        }
+                    });
+        
+                    document.getElementById('id_objeto').value = JSON.stringify(objetoList);
+        
+                    const formData = new FormData();
+                    formData.append('objeto', document.getElementById('id_objeto').value);
+        
+                    fetch("{% url 'actualizar_proyecto' proyecto_pk %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: formData
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('Unity fields updated successfully');
+                        } else {
+                            alert('Failed to update unity fields');
+                        }
+                    }).catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating unity fields');
+                    });
+                });
+            });
+        </script>
     </form>
 </main>
 {%endblock%}
