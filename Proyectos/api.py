@@ -46,8 +46,8 @@ class UnityProyectoAPIView(APIView):
         serializer = UnityProyectoSerializer(data=request.data)
         if serializer.is_valid():
             id = serializer.validated_data['id']
-            habitacion_file = serializer.validated_data['habitacion']
-            objeto_file = serializer.validated_data['objeto']
+            habitacion = serializer.validated_data['habitacion']
+            objeto = serializer.validated_data['objeto']
             material_pared = serializer.validated_data['material_pared']
             material_piso = serializer.validated_data['material_piso']
             
@@ -57,38 +57,12 @@ class UnityProyectoAPIView(APIView):
             except Proyecto.DoesNotExist:
                 return Response({'message': 'Proyecto no encontrado'}, status=status.HTTP_404_NOT_FOUND)
 
-            # Eliminar archivos antiguos en Firebase Storage
-            try:
-                print("eliminado")
-                habitacion_blob = bucket.blob(f'UnityProyect/{id}/habitacion.json')
-                habitacion_blob.delete()
-            except Exception as e:
-                print(f"Error al eliminar el archivo habitacion.json de Firebase: {e}")
-            
-            try:
-                print("eliminado")
-                objeto_blob = bucket.blob(f'UnityProyect/{id}/objeto.json')
-                objeto_blob.delete()
-            except Exception as e:
-                print(f"Error al eliminar el archivo objeto.json de Firebase: {e}")
-
-            # Subir archivos actualizados a Firebase Storage
-            habitacion_blob = bucket.blob(f'UnityProyect/{id}/habitacion.json')
-            habitacion_blob.upload_from_string(habitacion_file, content_type='application/json')
-            habitacion_blob.make_public()
-            habitacion_url = habitacion_blob.public_url
-
-            objeto_blob = bucket.blob(f'UnityProyect/{id}/objeto.json')
-            objeto_blob.upload_from_string(objeto_file, content_type='application/json')
-            objeto_blob.make_public()
-            objeto_url = objeto_blob.public_url
-
             # Actualizar el campo unityproyect del proyecto
             unityproyect_data = proyecto.unityproyect or {}
             unityproyect_data.update({
                 'id': id,
-                'habitacion': habitacion_url,
-                'objeto': objeto_url,
+                'habitacion': habitacion,
+                'objeto': objeto,
                 'material_piso': material_piso,
                 'material_pared': material_pared
                 
