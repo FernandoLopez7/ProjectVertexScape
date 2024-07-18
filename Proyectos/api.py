@@ -5,6 +5,7 @@ from .models import Proyecto, Categoria, Objeto
 from .serializers import ProyectoSerializer, ObjetoSerializer, UnityProyectoSerializer
 from rest_framework.views import APIView
 from .firebase import bucket
+import json
 
 class ProyectoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProyectoSerializer
@@ -46,8 +47,8 @@ class UnityProyectoAPIView(APIView):
         serializer = UnityProyectoSerializer(data=request.data)
         if serializer.is_valid():
             id = serializer.validated_data['id']
-            habitacion = serializer.validated_data['habitacion']
-            objeto = serializer.validated_data['objeto']
+            habitacion = json.loads(serializer.validated_data['habitacion'])
+            objeto = json.loads(serializer.validated_data['objeto'])
             material_pared = serializer.validated_data['material_pared']
             material_piso = serializer.validated_data['material_piso']
             
