@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'channels',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -70,6 +71,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'Proyectos.middleware.GZipMiddleware',
+    
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'VertexScape.urls'
@@ -207,6 +210,10 @@ CHANNEL_LAYERS = {
         # },
     },
 }
+
+
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
