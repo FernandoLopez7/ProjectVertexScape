@@ -240,8 +240,8 @@ class Proyecto(models.Model):
                 "id": self.id,
                 "habitacion": "",
                 "objeto": "",
-                "material_pared": 0,
-                "material_piso": 0
+                "material_pared": "",
+                "material_piso": ""
             }
         super(Proyecto, self).save(*args, **kwargs)
         

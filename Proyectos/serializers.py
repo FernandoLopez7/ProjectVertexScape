@@ -21,7 +21,7 @@ class ObjetoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Objeto
-        fields = ['nombre', 'objeto3d', 'img']
+        fields = ['nombre', 'objeto3d', 'img', 'descripcion', 'tipoHabitacion']
 
     def get_objeto3d(self, objeto):
         return self.context['request'].build_absolute_uri(objeto.unityobjeto)
@@ -33,5 +33,5 @@ class UnityProyectoSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     habitacion = serializers.JSONField()
     objeto = serializers.JSONField()
-    material_pared = serializers.IntegerField()
-    material_piso = serializers.IntegerField()
+    material_pared = serializers.CharField()
+    material_piso = serializers.CharField()
