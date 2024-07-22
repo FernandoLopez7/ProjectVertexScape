@@ -37,8 +37,11 @@ def actualizar_proyecto(request, pk):
         form = ProyectoForm(request.POST, instance=proyecto)
         if form.is_valid():
             proyecto = form.save(commit=False)
-            objeto_list = json.loads(form.cleaned_data['objeto'])
-            proyecto.unityproyect['objeto'] = objeto_list
+            try:
+                objeto_list = json.loads(form.cleaned_data['objeto'])
+                proyecto.unityproyect['objeto'] = objeto_list
+            except Exception as e:
+                objeto_list = proyecto.unityproyect.get('objeto', [])
             proyecto.save()
             return redirect('index')
     else:
