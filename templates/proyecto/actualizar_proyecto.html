@@ -26,57 +26,130 @@
         </div>
         <div class="row unity-row">
             <img id="streamImage" alt="Streaming Image" />
-
+            <audio id="remoteAudio" autoplay controls></audio>
             <script>
                 const socket = new WebSocket('wss://projectvertexscape.onrender.com/ws/jsonScene/');
-
+                let peerConnection;
+                let localStream;
+                let audioTrack;
+                const config = {
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                };
+        
+                async function start() {
+                    try {
+                        // Request access to the microphone
+                        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        document.getElementById('audioStatus').innerText = "Microphone access granted";
+        
+                        // Create peer connection and add local stream
+                        createPeerConnection();
+                        audioTrack = localStream.getAudioTracks()[0];
+                        peerConnection.addTrack(audioTrack, localStream);
+                        visualizeAudio(localStream);
+        
+                    } catch (err) {
+                        console.error('Error accessing media devices.', err);
+                        document.getElementById('audioStatus').innerText = "Microphone access denied";
+                    }
+                }
+        
+                // #region PeerConnection
                 socket.onopen = function (event) {
                     console.log('WebSocket connection established');
-
-                    // Suscribirse al grupo de clientes web
-                    socket.send(JSON.stringify({
-                        'command': 'subscribe',
-                        'group': 'web_clients_group',
-                    }));
+                    socket.send(JSON.stringify({ 'command': 'subscribe', 'group': 'web_clients_group' }));
                 };
-
-                socket.onmessage = function (event) {
+        
+                socket.onmessage = async function (event) {
                     console.log('Received data from server');
-
-                    if (event.data instanceof Blob) {
+        
+                    if (typeof event.data === "string") {
+                        const message = JSON.parse(event.data);
+        
+                        if (!peerConnection) {
+                            createPeerConnection();
+                        }
+        
+                        if (message.type === 'offer') {
+                            console.log('Received offer:', message.sdp);
+                            if (peerConnection.signalingState !== 'stable' && peerConnection.signalingState !== 'have-remote-offer') {
+                                console.error('Received offer in invalid state:', peerConnection.signalingState);
+                                return;
+                            }
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
+                            const answer = await peerConnection.createAnswer();
+                            console.log("created answer for offer:", message.sdp);
+                            await peerConnection.setLocalDescription(answer);
+                            socket.send(JSON.stringify({ type: 'answer', sdp: answer.sdp }));
+                        } else if (message.type === 'ice') {
+                            console.log('Received ICE candidate:', message.candidate);
+                            const candidate = new RTCIceCandidate({ sdpMLineIndex: message.sdpMLineIndex, candidate: message.candidate });
+                            await peerConnection.addIceCandidate(candidate);
+                        }
+                    } else if (event.data instanceof Blob) {
                         const reader = new FileReader();
                         reader.onload = function () {
                             const arrayBuffer = this.result;
                             const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'image/jpeg' });
                             const url = URL.createObjectURL(blob);
-
-                            const img = document.getElementById('streamImage');
-                            img.src = url;
+                            document.getElementById('streamImage').src = url;
                         };
                         reader.readAsArrayBuffer(event.data);
-                    } else {
-                        console.log('Received non-binary data:', event.data);
                     }
                 };
-
+        
+                function createPeerConnection() {
+                    peerConnection = new RTCPeerConnection(config);
+        
+                    peerConnection.onicecandidate = function (event) {
+                        if (event.candidate) {
+                            console.log('Sending ICE candidate:', event.candidate);
+                            socket.send(JSON.stringify({ type: 'ice', candidate: event.candidate.candidate, sdpMid: event.candidate.sdpMid, sdpMLineIndex: event.candidate.sdpMLineIndex }));
+                        }
+                    };
+        
+                    peerConnection.ontrack = function (event) {
+                        console.log('Track received:', event.track);
+                        document.getElementById('remoteAudio').srcObject = event.streams[0];
+                        document.getElementById('audioStatus').innerText = "Audio status: Connected";
+        
+                        if (event.track.kind === 'audio') {
+                            const audioStream = new MediaStream();
+                            audioStream.addTrack(event.track);
+                            remoteAudio.srcObject = audioStream;
+                            event.track.enabled = true;
+                            event.track.onmute = () => {
+                                console.log('Track muted');
+                            };
+                            event.track.onunmute = () => {
+                                console.log('Track unmuted');
+                            };
+                            console.log('Audio track received and set to play:', event.track);
+                        }
+                    };
+        
+                    peerConnection.oniceconnectionstatechange = function () {
+                        console.log('ICE connection state change:', peerConnection.iceConnectionState);
+                    };
+        
+                    peerConnection.onsignalingstatechange = function () {
+                        console.log('Signaling state change:', peerConnection.signalingState);
+                    };
+                }
+        
                 socket.onerror = function (error) {
                     console.error('WebSocket error:', error);
                 };
-
+        
                 socket.onclose = function (event) {
                     console.log('WebSocket connection closed:', event.code, event.reason);
                 };
-
-                // Function to convert ArrayBuffer to base64 URL
-                function arrayBufferToBase64(buffer) {
-                    let binary = '';
-                    const bytes = new Uint8Array(buffer);
-                    const len = bytes.byteLength;
-                    for (let i = 0; i < len; i++) {
-                        binary += String.fromCharCode(bytes[i]);
-                    }
-                    return 'data:image/jpeg;base64,' + btoa(binary);
-                }
+        
+                window.addEventListener('beforeunload', () => {
+                    socket.close();
+                });
+        
+                start(); 
             </script>
             <!-- Contenido para la segunda fila, que se integra con Unity -->
         </div>
@@ -93,13 +166,31 @@
         <div class="row buttons-container">
             <button class="button-arounder" type="button" id="save-unity-fields">Guardar Unity Fields</button>
         </div>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                // Función para decodificar caracteres Unicode escapados
+                function decodeUnicodeEscapes(str) {
+                    return str.replace(/\\u[\dA-F]{4}/gi, function (match) {
+                        return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                    });
+                }
+        
                 const rawJson = document.getElementById('id_objeto').value;
         
                 let objetoList;
                 try {
-                    objetoList = JSON.parse(rawJson.replace(/\\u0022/g, '"'));
+                    const decodedJson = decodeUnicodeEscapes(rawJson);
+                    console.log("Decoded JSON:", decodedJson);  // Imprime el JSON decodificado para verificar su estructura
+                    const parsedJson = JSON.parse(decodedJson.replace(/\\u0022/g, '"'));
+                    console.log("Parsed JSON:", parsedJson);  // Imprime el JSON parseado para verificar su estructura
+        
+                    // Asegúrate de que el JSON parseado tenga la estructura esperada
+                    if (parsedJson && Array.isArray(parsedJson.data)) {
+                        objetoList = parsedJson.data;
+                    } else {
+                        throw new Error("La estructura del JSON es incorrecta");
+                    }
                 } catch (error) {
                     console.error("Error al parsear JSON:", error);
                     return;
@@ -112,11 +203,13 @@
         
                 const updateEditor = () => {
                     editorContainer.innerHTML = '';
-                    objetoList.forEach((objeto) => {
+                    objetoList.forEach((objeto, index) => {
+                        const cleanedId = objeto.id.replace("Prefab(Clone)", "");
+                        const uniqueId = `${cleanedId}-${index}`;
                         const div = document.createElement('div');
                         div.innerHTML = `
-                            <label for="objeto-${objeto.id}-textContent">Objeto ${objeto.id} TextContent:</label>
-                            <input type="text" id="objeto-${objeto.id}-textContent" value="${objeto.textContent || ''}" data-id="${objeto.id}">
+                            <label for="objeto-${uniqueId}-comentario">Objeto ${cleanedId} comentario:</label>
+                            <input type="text" id="objeto-${uniqueId}-comentario" value="${objeto.textContent || ''}" data-id="${uniqueId}">
                         `;
                         editorContainer.appendChild(div);
                         // Añadir evento para detectar cambios por el usuario
@@ -126,17 +219,17 @@
                         });
                         // Detectar el foco y la posición del cursor
                         inputElement.addEventListener('focus', () => {
-                            currentFocusId = objeto.id;
+                            currentFocusId = `objeto-${uniqueId}-comentario`;
                         });
                         inputElement.addEventListener('blur', () => {
-                            if (currentFocusId === objeto.id) {
+                            if (currentFocusId === `objeto-${uniqueId}-comentario`) {
                                 cursorPosition = inputElement.selectionStart;
                             }
                         });
                     });
                     // Restaurar el foco y la posición del cursor
                     if (currentFocusId !== null) {
-                        const focusedElement = document.getElementById(`objeto-${currentFocusId}-textContent`);
+                        const focusedElement = document.getElementById(currentFocusId);
                         if (focusedElement) {
                             focusedElement.focus();
                             if (cursorPosition !== null) {
@@ -154,28 +247,36 @@
                     fetch("{% url 'obtener_objetos' proyecto_pk %}")
                         .then(response => response.json())
                         .then(data => {
-                            const newObjetoList = data.objeto_list;
+                            console.log("Fetched data:", data);  // Imprime el JSON recibido para verificar su estructura
         
-                            // Mantener los cambios del usuario
-                            const userModifiedInputs = document.querySelectorAll('input[data-user-modified="true"]');
-                            userModifiedInputs.forEach(input => {
-                                const id = input.dataset.id;
-                                const objeto = newObjetoList.find(o => o.id === id);
-                                if (objeto) {
-                                    objeto.textContent = input.value;
-                                }
-                            });
+                            // Asegúrate de que el JSON recibido tenga la estructura esperada
+                            if (data && data.objeto_list && Array.isArray(data.objeto_list.data)) {
+                                const newObjetoList = data.objeto_list.data;
         
-                            objetoList = newObjetoList;
-                            updateEditor();  // Actualizar el editor con la nueva lista de objetos
+                                // Mantener los cambios del usuario
+                                const userModifiedInputs = document.querySelectorAll('input[data-user-modified="true"]');
+                                userModifiedInputs.forEach(input => {
+                                    const id = input.dataset.id;
+                                    const index = parseInt(id.split('-').pop());
+                                    if (newObjetoList[index]) {
+                                        newObjetoList[index].textContent = input.value;
+                                    }
+                                });
         
-                            // Restaurar el estado de modificación del usuario
-                            userModifiedInputs.forEach(input => {
-                                const inputField = document.querySelector(`#objeto-${input.dataset.id}-textContent`);
-                                if (inputField) {
-                                    inputField.dataset.userModified = true;
-                                }
-                            });
+                                objetoList = newObjetoList;
+                                updateEditor();  // Actualizar el editor con la nueva lista de objetos
+        
+                                // Restaurar el estado de modificación del usuario
+                                userModifiedInputs.forEach(input => {
+                                    const id = input.dataset.id;
+                                    const inputField = document.querySelector(`#${id}`);
+                                    if (inputField) {
+                                        inputField.dataset.userModified = true;
+                                    }
+                                });
+                            } else {
+                                console.error("La estructura del JSON recibido es incorrecta");
+                            }
                         })
                         .catch(error => console.error('Error fetching updates:', error));
                 };
@@ -183,14 +284,14 @@
                 setInterval(fetchUpdates, 8000);  // Consultar cada 8 segundos
         
                 document.getElementById('save-unity-fields').addEventListener('click', function () {
-                    objetoList.forEach((objeto) => {
-                        const inputField = document.getElementById(`objeto-${objeto.id}-textContent`);
+                    objetoList.forEach((objeto, index) => {
+                        const inputField = document.getElementById(`objeto-${objeto.id.replace("Prefab(Clone)", "")}-${index}-comentario`);
                         if (inputField) {
                             objeto.textContent = inputField.value;
                         }
                     });
         
-                    document.getElementById('id_objeto').value = JSON.stringify(objetoList);
+                    document.getElementById('id_objeto').value = JSON.stringify({data: objetoList});
         
                     const formData = new FormData();
                     formData.append('objeto', document.getElementById('id_objeto').value);
@@ -214,6 +315,8 @@
                 });
             });
         </script>
+
+
     </form>
 </main>
 {%endblock%}
