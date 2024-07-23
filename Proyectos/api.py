@@ -10,7 +10,7 @@ import json
 class ProyectoViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ProyectoSerializer
     permission_classes = [IsAuthenticated]
-
+    
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return Proyecto.objects.none()
@@ -19,7 +19,12 @@ class ProyectoViewSet(viewsets.ReadOnlyModelViewSet):
             return Proyecto.objects.filter(diseñador=usuario)
         else:
             return Proyecto.objects.filter(cliente=usuario)
-
+        
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})
+        return context
+    
 class CategoriaObjetosViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Categoria.objects.all()
     serializer_class = ObjetoSerializer

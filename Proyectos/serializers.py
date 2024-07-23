@@ -4,6 +4,7 @@ from .models import Proyecto, Categoria, Objeto
 class ProyectoSerializer(serializers.ModelSerializer):
     diseñador_nombre = serializers.SerializerMethodField()
     cliente_nombre = serializers.SerializerMethodField()
+    grupo = serializers.SerializerMethodField()
 
     class Meta:
         model = Proyecto
@@ -14,7 +15,15 @@ class ProyectoSerializer(serializers.ModelSerializer):
 
     def get_cliente_nombre(self, obj):
         return f"{obj.cliente.first_name} {obj.cliente.last_name}" if obj.cliente else None
-
+    
+    def get_grupo(self, obj):
+        usuario = self.context['request'].user
+        if usuario.groups.filter(name='Diseñador').exists():
+            return "Diseñador"
+        elif usuario.groups.filter(name='Cliente').exists():
+            return "Cliente"
+        return "Sin grupo"
+    
 class ObjetoSerializer(serializers.ModelSerializer):
     objeto3d = serializers.SerializerMethodField()
     img = serializers.SerializerMethodField()
