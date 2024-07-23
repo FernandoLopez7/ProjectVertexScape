@@ -45,7 +45,6 @@
                         createPeerConnection();
                         audioTrack = localStream.getAudioTracks()[0];
                         peerConnection.addTrack(audioTrack, localStream);
-                        visualizeAudio(localStream);
         
                     } catch (err) {
                         console.error('Error accessing media devices.', err);
