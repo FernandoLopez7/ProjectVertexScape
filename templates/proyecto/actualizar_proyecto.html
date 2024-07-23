@@ -201,11 +201,11 @@
                 const updateEditor = () => {
                     editorContainer.innerHTML = '';
                     objetoList.forEach((objeto, index) => {
-                        const cleanedId = objeto.id.replace("Prefab(Clone)", "");
-                        const uniqueId = `${cleanedId}-${index}`;
+                        const cleanedPrefabName = objeto.prefabName.replace("Prefab(Clone)", "");
+                        const uniqueId = `${cleanedPrefabName}-${index}`;
                         const div = document.createElement('div');
                         div.innerHTML = `
-                            <label for="objeto-${uniqueId}-comentario">Objeto ${cleanedId} comentario:</label>
+                            <label for="objeto-${uniqueId}-comentario">Objeto ${cleanedPrefabName} comentario:</label>
                             <input type="text" id="objeto-${uniqueId}-comentario" value="${objeto.textContent || ''}" data-id="${uniqueId}">
                         `;
                         editorContainer.appendChild(div);
@@ -282,7 +282,8 @@
         
                 document.getElementById('save-unity-fields').addEventListener('click', function () {
                     objetoList.forEach((objeto, index) => {
-                        const inputField = document.getElementById(`objeto-${objeto.id.replace("Prefab(Clone)", "")}-${index}-comentario`);
+                        const cleanedPrefabName = objeto.prefabName.replace("Prefab(Clone)", "");
+                        const inputField = document.getElementById(`objeto-${cleanedPrefabName}-${index}-comentario`);
                         if (inputField) {
                             objeto.textContent = inputField.value;
                         }
@@ -312,6 +313,7 @@
                 });
             });
         </script>
+        
 
 
     </form>
