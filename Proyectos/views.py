@@ -52,12 +52,10 @@ def actualizar_proyecto(request, pk):
     print(f"Contenido de objeto_list: {objeto_list_json}") 
     return render(request, 'proyecto/actualizar_proyecto.html', {'form': form, 'proyecto_pk': proyecto.pk, 'objeto_list': objeto_list_json})
 
-@login_required
 def obtener_objetos(request, pk):
     proyecto = get_object_or_404(Proyecto, pk=pk)
     objeto_list = proyecto.unityproyect.get('objeto', [])
     return JsonResponse({'objeto_list': objeto_list})
-
 
 @login_required
 def eliminar_proyecto(request, pk):
