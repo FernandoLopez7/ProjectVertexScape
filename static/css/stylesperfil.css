@@ -1,0 +1,28 @@
+.main-container {
+  justify-content: center; /* Centrar horizontalmente */
+  align-items: center; /* Centrar verticalmente */
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-top: 70px; /* Altura del nav */
+}
+.row-a, .row-b {
+  display: flex;
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px; /* Establezca un ancho máximo */
+  margin: 0 auto; /* Centrar horizontalmente */
+}
+
+/* Dividir row-a en dos columnas */
+.column {
+  flex: 1;
+  padding: 0 10px; /* Agrega un espacio entre las columnas */
+}
+
+/* Estilo opcional para las columnas */
+.column {
+  background: #ececec; /* Color de fondo para las columnas */
+  border-radius: 5px; /* Bordes redondeados */
+  margin: 0 5px; /* Espacio entre las columnas */
+}

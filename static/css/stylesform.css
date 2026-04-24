@@ -1,0 +1,116 @@
+/* Estilos generales */
+.main {
+  width: 100%;
+  margin-top: 50%; /* Margen superior para separarlo del header */
+}
+
+.container-form {
+  display: flex;
+  justify-content: center;
+  color: #ffffff;
+  align-items: center;
+  width: 1000px;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.column {
+  flex: 1; /* Cada columna ocupa el mismo espacio */
+  margin: 10px 50px; /* Espacio entre las columnas */
+}
+
+.unity-row {
+  height: 400px; /* Ajusta la altura según necesites */
+  background-color: #f0f0f0; /* Color de fondo de la fila */
+}
+
+.form-style {
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.13);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+  padding: 50px;
+}
+
+.container-form * {
+  font-family: "Poppins", sans-serif;
+  letter-spacing: 0.5px;
+  outline: none;
+  border: none;
+}
+
+.container-form h3 {
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 42px;
+  text-align: center;
+}
+
+.container-form label {
+  display: block;
+  margin-top: 30px;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.container-form select,
+.container-form input,
+.container-form textarea {
+  display: block;
+  height: 50px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.07);
+  border-radius: 3px;
+  padding: 0 10px;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 300;
+}
+
+/* Media query para hacer el diseño responsive */
+@media (max-width: 720px) {
+  .container-form {
+    flex-direction: column; /* Cambiar a disposición vertical */
+    height: auto; /* Altura automática */
+    padding: 10px; /* Reducir el padding */
+    align-items: flex-start; /* Alinear al inicio */
+    width: 100%;
+  }
+
+  .column {
+    margin: 10px 0; /* Reducir el margen entre columnas */
+  }
+  .row {
+    flex-direction: column;
+  }
+  .form-style {
+    padding: 20px; /* Reducir el padding */
+  }
+
+  .container-form h3 {
+    font-size: 24px; /* Reducir el tamaño de la fuente */
+    line-height: 32px; /* Reducir la altura de línea */
+    margin-top: 20px; /* Reducir el margen superior */
+  }
+
+  .container-form label {
+    font-size: 14px; /* Reducir el tamaño de la fuente */
+    margin-top: 15px; /* Reducir el margen superior */
+  }
+
+  .container-form select,
+  .container-form input,
+  .container-form textarea {
+    height: 40px; /* Reducir la altura del input */
+    font-size: 12px; /* Reducir el tamaño de la fuente */
+    margin-top: 5px; /* Reducir el margen superior */
+  }
+}

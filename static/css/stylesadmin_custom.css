@@ -1,0 +1,157 @@
+/* General styles */
+body {
+    background-color: #dcdcdc; /* Gris claro */
+    font-family: 'Arial', sans-serif;
+    color: #333; /* Gris oscuro */
+}
+
+a {
+    color: #555; /* Gris medio */
+}
+
+a:hover {
+    color: #462d1c; /* Marrón oscuro */
+}
+
+/* Header */
+#header {
+    background-color: #333; /* Gris oscuro */
+    color: #fff;
+    border-bottom: 3px solid #462d1c; /* Marrón oscuro */
+}
+
+#header h1 a {
+    color: #fff;
+}
+
+#header h1 a:hover {
+    text-decoration: none;
+}
+
+/* Navigation */
+#user-tools {
+    color: #fff;
+}
+
+#user-tools a {
+    color: #b28900; /* Marrón */
+}
+
+#user-tools a:hover {
+    color: #c68c1f; /* Marrón más claro */
+}
+
+/* Main content */
+.module h2 {
+    background-color: #555; /* Gris medio */
+    color: #fff;
+    padding: 10px;
+    margin: 0 -20px 20px -20px;
+}
+
+.module .inline-related h3 {
+    background-color: #e0e0e0; /* Gris claro */
+    padding: 10px;
+    margin: 0 -20px 20px -20px;
+}
+
+.fieldBox {
+    border: 1px solid #bfbfbf; /* Gris más claro */
+    padding: 10px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+/* Table */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+th, td {
+    border: 1px solid #d3d3d3; /* Gris claro */
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #555; /* Gris medio */
+    color: #fff;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2; /* Gris más claro */
+}
+
+tr:hover {
+    background-color: #e0e0e0; /* Gris claro */
+}
+
+/* Forms */
+input, select, textarea {
+    border: 1px solid #c0c0c0; /* Gris */
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #555; /* Gris medio */
+    outline: none;
+}
+
+/* Buttons */
+button, input[type="submit"] {
+    background-color: #555; /* Gris medio */
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover, input[type="submit"]:hover {
+    background-color: #462d1c; /* Marrón oscuro */
+}
+
+/* Estilos para el botón dentro de .nav-global */
+.nav-global .button {
+    background-color: #555; /* Gris medio */
+    color: #fff;
+    border: none;
+    padding: 12px 24px; /* Ajusta según sea necesario */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-decoration: none; /* Elimina la subrayado del enlace */
+    display: inline-block; /* Para que el botón se comporte como bloque */
+    transition: background-color 0.3s; /* Transición suave para el cambio de color */
+}
+
+.nav-global .button:hover {
+    background-color: #ffffffb5; 
+}
+
+.nav-global .button:focus {
+    outline: none; /* Elimina el contorno al hacer foco */
+    /* Puedes añadir estilos adicionales de foco si lo deseas */
+}
+
+/* Footer */
+#footer {
+    background-color: #333; /* Gris oscuro */
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    border-top: 3px solid #462d1c; /* Marrón oscuro */
+}
+
+#footer a {
+    color: #b28900; /* Marrón */
+}
+
+#footer a:hover {
+    color: #c68c1f; /* Marrón más claro */
+}

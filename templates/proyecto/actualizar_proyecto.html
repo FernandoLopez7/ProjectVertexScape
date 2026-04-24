@@ -1,0 +1,325 @@
+{% extends "predeterminados/base.html"%}
+{% load static %}
+{% block titulo%} Crear Proyecto {%endblock%}
+{% block estilos%}
+<!-- <link rel="stylesheet" type="text/css" href="{% static 'css/stylesform.css' %}" /> -->
+<link rel="stylesheet" type="text/css" href="{% static 'css/stylesform_black.css' %}" />
+{%endblock%}
+{% block contenido%}
+<main class="main ">
+    <form method="post" class="form-style">
+        <div class="container-form">
+            {% csrf_token %}
+            <div class="row">
+                <div class="column">
+                    <label for="id_cliente">Cliente:</label>
+                    <input type="text" id="id_cliente"
+                        value="{{ form.instance.cliente.first_name }} {{ form.instance.cliente.last_name }}" readonly>
+                    <label for="id_nombre">Nombre:</label>
+                    {{ form.nombre }}
+                </div>
+                <div class="column">
+                    <label for="id_notas_personales">Notas Personales:</label>
+                    {{ form.notas_personales }}
+                </div>
+            </div>
+        </div>
+        <div class="row unity-row">
+            <img id="streamImage" alt="Streaming Image" />
+            <audio id="remoteAudio" autoplay controls></audio>
+            <script>
+                const socket = new WebSocket('wss://projectvertexscape.onrender.com/ws/jsonScene/');
+                let peerConnection;
+                let localStream;
+                let audioTrack;
+                const config = {
+                    iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                };
+        
+                async function start() {
+                    try {
+                        // Request access to the microphone
+                        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+                        // Create peer connection and add local stream
+                        createPeerConnection();
+                        audioTrack = localStream.getAudioTracks()[0];
+                        peerConnection.addTrack(audioTrack, localStream);
+        
+                    } catch (err) {
+                        console.error('Error accessing media devices.', err);
+                    }
+                }
+        
+                // #region PeerConnection
+                socket.onopen = function (event) {
+                    console.log('WebSocket connection established');
+                    socket.send(JSON.stringify({ 'command': 'subscribe', 'group': 'web_clients_group' }));
+                };
+        
+                socket.onmessage = async function (event) {
+                    console.log('Received data from server');
+        
+                    if (typeof event.data === "string") {
+                        const message = JSON.parse(event.data);
+        
+                        if (!peerConnection) {
+                            createPeerConnection();
+                        }
+        
+                        if (message.type === 'offer') {
+                            console.log('Received offer:', message.sdp);
+                            if (peerConnection.signalingState !== 'stable' && peerConnection.signalingState !== 'have-remote-offer') {
+                                console.error('Received offer in invalid state:', peerConnection.signalingState);
+                                return;
+                            }
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: message.sdp }));
+                            const answer = await peerConnection.createAnswer();
+                            console.log("created answer for offer:", message.sdp);
+                            await peerConnection.setLocalDescription(answer);
+                            socket.send(JSON.stringify({ type: 'answer', sdp: answer.sdp }));
+                        } else if (message.type === 'ice') {
+                            console.log('Received ICE candidate:', message.candidate);
+                            const candidate = new RTCIceCandidate({ sdpMLineIndex: message.sdpMLineIndex, candidate: message.candidate });
+                            await peerConnection.addIceCandidate(candidate);
+                        }
+                    } else if (event.data instanceof Blob) {
+                        const reader = new FileReader();
+                        reader.onload = function () {
+                            const arrayBuffer = this.result;
+                            const blob = new Blob([new Uint8Array(arrayBuffer)], { type: 'image/jpeg' });
+                            const url = URL.createObjectURL(blob);
+                            document.getElementById('streamImage').src = url;
+                        };
+                        reader.readAsArrayBuffer(event.data);
+                    }
+                };
+        
+                function createPeerConnection() {
+                    peerConnection = new RTCPeerConnection(config);
+        
+                    peerConnection.onicecandidate = function (event) {
+                        if (event.candidate) {
+                            console.log('Sending ICE candidate:', event.candidate);
+                            socket.send(JSON.stringify({ type: 'ice', candidate: event.candidate.candidate, sdpMid: event.candidate.sdpMid, sdpMLineIndex: event.candidate.sdpMLineIndex }));
+                        }
+                    };
+        
+                    peerConnection.ontrack = function (event) {
+                        console.log('Track received:', event.track);
+                        document.getElementById('remoteAudio').srcObject = event.streams[0];
+                        document.getElementById('audioStatus').innerText = "Audio status: Connected";
+        
+                        if (event.track.kind === 'audio') {
+                            const audioStream = new MediaStream();
+                            audioStream.addTrack(event.track);
+                            remoteAudio.srcObject = audioStream;
+                            event.track.enabled = true;
+                            event.track.onmute = () => {
+                                console.log('Track muted');
+                            };
+                            event.track.onunmute = () => {
+                                console.log('Track unmuted');
+                            };
+                            console.log('Audio track received and set to play:', event.track);
+                        }
+                    };
+        
+                    peerConnection.oniceconnectionstatechange = function () {
+                        console.log('ICE connection state change:', peerConnection.iceConnectionState);
+                    };
+        
+                    peerConnection.onsignalingstatechange = function () {
+                        console.log('Signaling state change:', peerConnection.signalingState);
+                    };
+                }
+        
+                socket.onerror = function (error) {
+                    console.error('WebSocket error:', error);
+                };
+        
+                socket.onclose = function (event) {
+                    console.log('WebSocket connection closed:', event.code, event.reason);
+                };
+        
+                window.addEventListener('beforeunload', () => {
+                    socket.close();
+                });
+        
+                start(); 
+            </script>
+            <!-- Contenido para la segunda fila, que se integra con Unity -->
+        </div>
+        <div class="row buttons-container">
+            <button class="button-arounder" type="submit">Guardar</button>
+        </div>
+        <div class="row">
+            <div class="column">
+                <label for="id_objeto">Objeto:</label>
+                <input type="hidden" id="id_objeto" name="objeto" value='{{ objeto_list|escapejs }}'>
+                <div id="objeto-editor"></div>
+            </div>
+        </div>
+        <div class="row buttons-container">
+            <button class="button-arounder" type="button" id="save-unity-fields">Guardar Unity Fields</button>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Función para decodificar caracteres Unicode escapados
+                function decodeUnicodeEscapes(str) {
+                    return str.replace(/\\u[\dA-F]{4}/gi, function (match) {
+                        return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                    });
+                }
+        
+                const rawJson = document.getElementById('id_objeto').value;
+        
+                let objetoList;
+                try {
+                    const decodedJson = decodeUnicodeEscapes(rawJson);
+                    console.log("Decoded JSON:", decodedJson);  // Imprime el JSON decodificado para verificar su estructura
+                    const parsedJson = JSON.parse(decodedJson.replace(/\\u0022/g, '"'));
+                    console.log("Parsed JSON:", parsedJson);  // Imprime el JSON parseado para verificar su estructura
+        
+                    // Asegúrate de que el JSON parseado tenga la estructura esperada
+                    if (parsedJson && Array.isArray(parsedJson.data)) {
+                        objetoList = parsedJson.data;
+                    } else {
+                        throw new Error("La estructura del JSON es incorrecta");
+                    }
+                } catch (error) {
+                    console.error("Error al parsear JSON:", error);
+                    return;
+                }
+                console.log("Contenido de objetoList:", objetoList);
+        
+                const editorContainer = document.getElementById('objeto-editor');
+                let currentFocusId = null;
+                let cursorPosition = null;
+        
+                const updateEditor = () => {
+                    editorContainer.innerHTML = '';
+                    objetoList.forEach((objeto, index) => {
+                        const cleanedPrefabName = objeto.prefabName.replace("Prefab(Clone)", "");
+                        const uniqueId = `${cleanedPrefabName}-${index}`;
+                        const div = document.createElement('div');
+                        div.innerHTML = `
+                            <label for="objeto-${uniqueId}-comentario">Objeto ${cleanedPrefabName} comentario:</label>
+                            <input type="text" id="objeto-${uniqueId}-comentario" value="${objeto.textContent || ''}" data-id="${uniqueId}">
+                        `;
+                        editorContainer.appendChild(div);
+                        // Añadir evento para detectar cambios por el usuario
+                        const inputElement = div.querySelector('input');
+                        inputElement.addEventListener('input', () => {
+                            inputElement.dataset.userModified = true;
+                        });
+                        // Detectar el foco y la posición del cursor
+                        inputElement.addEventListener('focus', () => {
+                            currentFocusId = `objeto-${uniqueId}-comentario`;
+                        });
+                        inputElement.addEventListener('blur', () => {
+                            if (currentFocusId === `objeto-${uniqueId}-comentario`) {
+                                cursorPosition = inputElement.selectionStart;
+                            }
+                        });
+                    });
+                    // Restaurar el foco y la posición del cursor
+                    if (currentFocusId !== null) {
+                        const focusedElement = document.getElementById(currentFocusId);
+                        if (focusedElement) {
+                            focusedElement.focus();
+                            if (cursorPosition !== null) {
+                                focusedElement.setSelectionRange(cursorPosition, cursorPosition);
+                            }
+                        } else {
+                            currentFocusId = null;  // Si el elemento enfocado ha sido eliminado, resetear el índice
+                            cursorPosition = null;
+                        }
+                    }
+                };
+                updateEditor();
+        
+                const fetchUpdates = () => {
+                    fetch("{% url 'obtener_objetos' proyecto_pk %}")
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("Fetched data:", data);  // Imprime el JSON recibido para verificar su estructura
+        
+                            // Asegúrate de que el JSON recibido tenga la estructura esperada
+                            if (data && data.objeto_list && Array.isArray(data.objeto_list.data)) {
+                                const newObjetoList = data.objeto_list.data;
+        
+                                // Mantener los cambios del usuario
+                                const userModifiedInputs = document.querySelectorAll('input[data-user-modified="true"]');
+                                userModifiedInputs.forEach(input => {
+                                    const id = input.dataset.id;
+                                    const index = parseInt(id.split('-').pop());
+                                    if (newObjetoList[index]) {
+                                        newObjetoList[index].textContent = input.value;
+                                    }
+                                });
+        
+                                objetoList = newObjetoList;
+                                updateEditor();  // Actualizar el editor con la nueva lista de objetos
+        
+                                // Restaurar el estado de modificación del usuario
+                                userModifiedInputs.forEach(input => {
+                                    const id = input.dataset.id;
+                                    const inputField = document.querySelector(`#${id}`);
+                                    if (inputField) {
+                                        inputField.dataset.userModified = true;
+                                    }
+                                });
+                            } else {
+                                console.error("La estructura del JSON recibido es incorrecta");
+                            }
+                        })
+                        .catch(error => console.error('Error fetching updates:', error));
+                };
+        
+                setInterval(fetchUpdates, 8000);  // Consultar cada 8 segundos
+        
+                document.getElementById('save-unity-fields').addEventListener('click', function () {
+                    objetoList.forEach((objeto, index) => {
+                        const cleanedPrefabName = objeto.prefabName.replace("Prefab(Clone)", "");
+                        const inputField = document.getElementById(`objeto-${cleanedPrefabName}-${index}-comentario`);
+                        if (inputField) {
+                            objeto.textContent = inputField.value;
+                        }
+                    });
+        
+                    document.getElementById('id_objeto').value = JSON.stringify({data: objetoList});
+        
+                    const formData = new FormData();
+                    formData.append('objeto', document.getElementById('id_objeto').value);
+        
+                    fetch("{% url 'actualizar_proyecto' proyecto_pk %}", {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        },
+                        body: formData
+                    }).then(response => {
+                        if (response.ok) {
+                            alert('Unity fields updated successfully');
+                        } else {
+                            alert('Failed to update unity fields');
+                        }
+                    }).catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while updating unity fields');
+                    });
+                });
+            });
+        </script>
+        <script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
+        <script>
+            call = window.Daily.createFrame();
+            call.join({ url: 'https://tita.daily.co/TitaRoom' });
+        </script>        
+
+
+    </form>
+</main>
+{%endblock%}
